@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEACON - System Monitor</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">BEACON</h1>
+            <div class="header-status">
+                <span class="status-indicator" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- System Overview Section -->
+        <section class="system-overview">
+            <h2 class="section-title">SYSTEM OVERVIEW</h2>
+            
+            <div class="stats-grid">
+                <!-- CPU Card -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">CPU</h3>
+                        <span class="stat-icon">⚡</span>
+                    </div>
+                    <div class="stat-value" id="cpu-value">0.0%</div>
+                    <div class="stat-chart-container">
+                        <canvas id="cpu-chart"></canvas>
+                    </div>
+                    <div class="stat-footer" id="cpu-cores">0 cores</div>
+                </div>
+
+                <!-- RAM Card -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">RAM</h3>
+                        <span class="stat-icon">💾</span>
+                    </div>
+                    <div class="stat-value" id="ram-value">0.0 GB</div>
+                    <div class="stat-chart-container">
+                        <canvas id="ram-chart"></canvas>
+                    </div>
+                    <div class="stat-footer" id="ram-percent">0%</div>
+                </div>
+
+                <!-- Network Card -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">NETWORK</h3>
+                        <span class="stat-icon">🌐</span>
+                    </div>
+                    <div class="stat-value network-values">
+                        <div class="network-line">
+                            <span class="network-arrow">↓</span>
+                            <span id="network-download">0.00 MB/s</span>
+                        </div>
+                        <div class="network-line">
+                            <span class="network-arrow">↑</span>
+                            <span id="network-upload">0.00 MB/s</span>
+                        </div>
+                    </div>
+                    <div class="stat-chart-container">
+                        <canvas id="network-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Disk Card -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">DISK</h3>
+                        <span class="stat-icon">💿</span>
+                    </div>
+                    <div class="stat-value" id="disk-value">0%</div>
+                    <div class="stat-chart-container">
+                        <canvas id="disk-chart"></canvas>
+                    </div>
+                    <div class="stat-footer" id="disk-space">0 GB / 0 GB</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Process List Section -->
+        <section class="process-section">
+            <div class="process-header">
+                <h2 class="section-title">TOP PROCESSES</h2>
+                <div class="process-controls">
+                    <label for="sort-select">Sort by:</label>
+                    <select id="sort-select" class="sort-dropdown">
+                        <option value="cpu">CPU</option>
+                        <option value="memory">Memory</option>
+                        <option value="name">Name</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="process-list" id="process-list">
+                <!-- Processes will be dynamically inserted here -->
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
