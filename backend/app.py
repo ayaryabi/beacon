@@ -1,11 +1,11 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit
 import psutil
 import time
 import threading
 import os
 
-app = Flask(__name__, static_folder='../frontend', template_folder='../frontend')
+app = Flask(__name__, static_folder='../frontend', static_url_path='', template_folder='../frontend')
 app.config['SECRET_KEY'] = 'beacon-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
