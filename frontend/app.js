@@ -167,15 +167,15 @@ function updateConnectionStatus(connected) {
 
 // Update system stats
 function updateSystemStats(data) {
-    // CPU
+    // CPU - shows overall usage percentage across all cores
     document.getElementById('cpu-value').textContent = `${data.cpu.total}%`;
     document.getElementById('cpu-cores').textContent = `${data.cpu.count} cores`;
     updateChartData(chartData.cpu, data.cpu.total);
     cpuChart.update('none');
 
-    // RAM
-    document.getElementById('ram-value').textContent = `${data.ram.used_gb} GB`;
-    document.getElementById('ram-percent').textContent = `${data.ram.percent}% of ${data.ram.total_gb} GB`;
+    // RAM - show percentage in main value for consistency
+    document.getElementById('ram-value').textContent = `${data.ram.percent}%`;
+    document.getElementById('ram-percent').textContent = `${data.ram.used_gb} GB / ${data.ram.total_gb} GB`;
     updateChartData(chartData.ram, data.ram.percent);
     ramChart.update('none');
 
@@ -201,35 +201,78 @@ function updateProcessList(processes) {
 
     const processListEl = document.getElementById('process-list');
     
-    // Get currently expanded process IDs
-    const expandedPids = Array.from(document.querySelectorAll('.process-item.expanded'))
-        .map(item => parseInt(item.dataset.pid));
-
-    // Update process history for expanded processes
-    expandedPids.forEach(pid => {
-        const proc = processes.find(p => p.pid === pid);
-        if (proc) {
-            if (!processHistory[pid]) {
-                processHistory[pid] = { cpu: [], memory: [] };
-            }
-            updateChartData(processHistory[pid].cpu, proc.cpu_percent);
-            updateChartData(processHistory[pid].memory, proc.memory_percent);
-        }
+    // Get existing process items
+    const existingItems = {};
+    document.querySelectorAll('.process-item').forEach(item => {
+        existingItems[item.dataset.pid] = item;
     });
-
-    // Clear and rebuild list
-    processListEl.innerHTML = '';
     
-    processes.forEach(proc => {
-        const processItem = createProcessItem(proc);
-        processListEl.appendChild(processItem);
-        
-        // Restore expanded state
-        if (expandedPids.includes(proc.pid)) {
-            processItem.classList.add('expanded');
-            updateProcessCharts(proc.pid);
+    // Track which PIDs we've seen
+    const currentPids = new Set(processes.map(p => p.pid));
+    
+    // Remove processes that no longer exist
+    Object.keys(existingItems).forEach(pid => {
+        if (!currentPids.has(parseInt(pid))) {
+            existingItems[pid].remove();
+            delete processHistory[pid];
+            if (processCharts[pid]) {
+                processCharts[pid].cpu.destroy();
+                processCharts[pid].memory.destroy();
+                delete processCharts[pid];
+            }
         }
     });
+    
+    // Update or create process items
+    processes.forEach((proc, index) => {
+        const existingItem = existingItems[proc.pid];
+        
+        if (existingItem) {
+            // Update existing item
+            updateProcessItem(existingItem, proc);
+            
+            // Update history and charts if expanded
+            if (existingItem.classList.contains('expanded')) {
+                if (!processHistory[proc.pid]) {
+                    processHistory[proc.pid] = { cpu: [], memory: [] };
+                }
+                updateChartData(processHistory[proc.pid].cpu, proc.cpu_percent);
+                updateChartData(processHistory[proc.pid].memory, proc.memory_percent);
+                updateProcessCharts(proc.pid);
+            }
+            
+            // Ensure correct order
+            const currentIndex = Array.from(processListEl.children).indexOf(existingItem);
+            if (currentIndex !== index) {
+                processListEl.insertBefore(existingItem, processListEl.children[index] || null);
+            }
+        } else {
+            // Create new item
+            const processItem = createProcessItem(proc);
+            if (index < processListEl.children.length) {
+                processListEl.insertBefore(processItem, processListEl.children[index]);
+            } else {
+                processListEl.appendChild(processItem);
+            }
+        }
+    });
+}
+
+// Update existing process item (without rebuilding DOM)
+function updateProcessItem(item, proc) {
+    const nameEl = item.querySelector('.process-name');
+    const pidEl = item.querySelector('.process-pid');
+    const cpuEl = item.querySelectorAll('.process-stat')[0];
+    const ramEl = item.querySelectorAll('.process-stat')[1];
+    
+    // Only update if changed (prevents unnecessary repaints)
+    const newName = escapeHtml(proc.name);
+    if (nameEl.childNodes[1].textContent !== newName) {
+        nameEl.childNodes[1].textContent = newName;
+    }
+    
+    cpuEl.textContent = `CPU: ${proc.cpu_percent}%`;
+    ramEl.textContent = `RAM: ${proc.memory_mb} MB`;
 }
 
 // Sort processes
